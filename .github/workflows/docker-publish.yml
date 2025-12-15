@@ -1,4 +1,4 @@
-name: Docker
+Name: Docker
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -75,7 +75,12 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
         with:
-          context: .
+          # --- PERUBAHAN INI MEMPERBAIKI ERROR 'file not found' ---
+          # Konteks (direktori build) harus menunjuk ke folder yang berisi Dockerfile dan file COPY
+          context: ./nodepm2/22
+          # Tentukan lokasi file Dockerfile yang spesifik (relatif terhadap root repo)
+          file: ./nodepm2/22/Dockerfile
+          # --------------------------------------------------------
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
