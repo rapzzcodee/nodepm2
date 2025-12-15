@@ -1,0 +1,61 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  # Ganti dengan nama repository Anda
+  IMAGE_NAME: nodepm2
+  # Tag spesifik yang Anda inginkan (misalnya versi Node.js)
+  IMAGE_TAG: 22 
+  # Registry GHCR
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Izin ini penting untuk push ke GHCR.io
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 1. Setup Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # 2. Login ke GHCR.io
+    - name: Log into registry ${{ env.REGISTRY }}
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        # Gunakan GitHub token yang disediakan secara default untuk login ke GHCR.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    # 3. Ekstrak Metadata (Untuk membuat tag final)
+    # Ini memastikan tag yang dihasilkan sesuai dengan standar
+    - name: Extract Docker metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}
+        tags: |
+          type=raw,value=${{ env.IMAGE_TAG }}
+
+    # 4. Build dan Push Image
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        # Konteks dan Dockerfile location (asumsi Dockerfile di root atau sudah diatur sebelumnya)
+        context: .
+        file: Dockerfile
+        # Hanya push saat bukan Pull Request
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
